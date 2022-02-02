@@ -1,0 +1,115 @@
+service: crud-operations-api
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: us-east-1
+  apiName: ${self.service}
+  memory: 128mb
+  timeout: 10
+  environment:
+    DYNAMODB_TABLE_NAME: ${self.custom.usersTable}
+
+custom:
+  usersTable: users-table-${self.provider-stage}
+
+
+plugins:
+  - serverless-iam-roles-per-function
+
+
+functions:
+  getUser:
+    handler: api.getUser
+    name: get-user
+    memorySize: 128
+    timeout: 5
+    events:
+      - http:
+          path: user/{email}
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:GetItem"
+        Resource: !GetAtt UsersTable.Arn
+
+  geAlltUser:
+    handler: api.getUser
+    name: get-all-users
+    memorySize: 128
+    timeout: 5
+    events:
+      - http:
+          path: users
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:ScanItem"
+        Resource: !GetAtt UsersTable.Arn
+
+
+  createUser:
+    handler: api.createUser
+    name: create-user
+    memorySize: 128
+    timeout: 5
+    events:
+      - http:
+          path: user
+          method: POST
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action: 
+          - "dynamodb:PutItem"
+        Resource: !GetAtt UsersTable.Arn
+
+  updateUser:
+    handler: api.updateUser
+    name: update-user
+    memorySize: 128
+    timeout: 5
+    events:
+      - http:
+          path: user/{email}
+          method: PUT
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action: 
+          - "dynamodb:UpdateItem"
+        Resource: !GetAtt UsersTable.Arn
+
+  deleteUser:
+    handler: api.deleteUser
+    name: delete-user
+    memorySize: 128
+    timeout: 5
+    events:
+      - http:
+          path: user
+          method: DELETE
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action: 
+          - "dynamodb:DeleteItem"
+        Resource: !GetAtt UsersTable.Arn
+
+
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self.custom.usersTable}
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
