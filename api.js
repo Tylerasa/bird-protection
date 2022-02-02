@@ -58,3 +58,8 @@ const createUser = async (event) => {
     return response;
   }
 };
+
+
+module.exports ={
+    getUser, createUser
+}
